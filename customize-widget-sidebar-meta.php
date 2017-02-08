@@ -64,31 +64,43 @@ function register_sidebar_meta_settings() {
 		if ( ! ( $section instanceof \WP_Customize_Sidebar_Section ) ) {
 			continue;
 		}
-		$customize_id = sprintf( 'sidebar_meta[%s][title]', $section->sidebar_id );
-		$setting = new \WP_Customize_Setting( $wp_customize, $customize_id, array(
+
+		$title_setting = $wp_customize->add_setting( sprintf( 'sidebar_meta[%s][title]', $section->sidebar_id ), array(
 			'type' => 'theme_mod',
 			'capability' => 'edit_theme_options', // i.e. manage_widgets.
 			'sanitize_callback' => 'sanitize_text_field',
 			'transport' => 'postMessage',
 			'default' => '',
 		) );
-		$wp_customize->add_setting( $setting );
-
-		// Handle previewing of late-created settings.
-		if ( did_action( 'customize_preview_init' ) ) {
-			$setting->preview();
-		}
-
-		$partial = new \WP_Customize_Partial( $wp_customize->selective_refresh, $customize_id, array(
+		$wp_customize->selective_refresh->add_partial( $title_setting->id, array(
 			'container_inclusive' => true,
 			'type' => 'sidebar_meta_title',
-			'settings' => array( $customize_id ),
-			'selector' => sprintf( '[data-customize-partial-id="%s"]', $customize_id ),
+			'settings' => array( $title_setting->id ),
+			'selector' => sprintf( '[data-customize-partial-id="%s"]', $title_setting->id ),
 			'render_callback' => function() use ( $section ) {
 				render_sidebar_title( $section->sidebar_id );
 			},
 		) );
-		$wp_customize->selective_refresh->add_partial( $partial );
+
+		$background_color_setting = $wp_customize->add_setting( sprintf( 'sidebar_meta[%s][background_color]', $section->sidebar_id ), array(
+			'type' => 'theme_mod',
+			'capability' => 'edit_theme_options', // i.e. manage_widgets.
+			'sanitize_callback' => 'sanitize_hex_color',
+			'transport' => 'postMessage',
+			'default' => '',
+		) );
+		$wp_customize->selective_refresh->add_partial( $background_color_setting->id, array(
+			'type' => 'sidebar_meta_background_color',
+			'settings' => array( $background_color_setting->id ),
+			'selector' => sprintf( '.dynamic-sidebar.%s', sanitize_title( $section->sidebar_id ) ),
+			// Note that this partial has no render_callback because it is purely for JS previews.
+		) );
+
+		// Handle previewing of late-created settings.
+		if ( did_action( 'customize_preview_init' ) ) {
+			$title_setting->preview();
+			$background_color_setting->preview();
+		}
 	}
 }
 
@@ -124,6 +136,11 @@ function customize_controls_print_footer_scripts() {
 				<label for="{{ elementIdBase + '[title]' }}"><?php esc_html_e( 'Title:', 'customize-widget-sidebar-meta' ); ?></label>
 				<input class="title widefat" type="text" id="{{ elementIdBase + '[title]' }}">
 			</p>
+
+			<p class="background-color">
+				<label for="{{ elementIdBase + '[background-color]' }}"><?php esc_html_e( 'Background Color:', 'customize-widget-sidebar-meta' ); ?></label>
+				<input class="background-color widefat" type="color" id="{{ elementIdBase + '[background-color]' }}">
+			</p>
 		</div>
 	</script>
 	<?php
@@ -154,7 +171,37 @@ function enqueue_preview_scripts() {
 	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-title-partial.js';
 	$deps = array( 'customize-preview', 'customize-selective-refresh' );
 	wp_enqueue_script( $handle, $src, $deps );
+
+	$handle = 'customize-widget-sidebar-meta-background-color-partial';
+	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-background-color-partial.js';
+	$deps = array( 'customize-preview', 'customize-selective-refresh' );
+	wp_enqueue_script( $handle, $src, $deps );
 }
+
+/**
+ * Render the sidebar start element if it is needed.
+ *
+ * Themes and plugins can prevent an additional container element by defining a
+ * `container_class` property when calling `register_sidebar()`. Note the priority
+ * is 5 so that it will output the start element before the title and before the "milestone" comment.
+ *
+ * @see WP_Customize_Widgets::start_dynamic_sidebar()
+ *
+ * @param string $sidebar_id Sidebar ID.
+ */
+function render_sidebar_start_tag( $sidebar_id ) {
+
+	$style = 'padding: 5px;'; // For the sake of the background color.
+
+	$sidebar_meta = get_theme_mod( 'sidebar_meta' );
+	if ( ! empty( $sidebar_meta[ $sidebar_id ]['background_color'] ) ) {
+		$style .= sprintf( 'background-color: %s;', $sidebar_meta[ $sidebar_id ]['background_color'] );
+	}
+
+	printf( '<div class="dynamic-sidebar %s" style="%s">', sanitize_title( $sidebar_id ), $style );
+
+}
+add_action( 'dynamic_sidebar_before', __NAMESPACE__ . '\render_sidebar_start_tag', 5 );
 
 /**
  * Render the sidebar title.
@@ -188,3 +235,17 @@ function render_sidebar_title( $sidebar_id ) {
 	printf( '<h1 %s>%s</h1>', $container_attributes, esc_html( $rendered_title ) );
 }
 add_action( 'dynamic_sidebar_before', __NAMESPACE__ . '\render_sidebar_title', 9 );
+
+/**
+ * Render the sidebar start element.
+ *
+ * Note the priority is 5 so that it will output the start element before the title and before the "milestone" comment.
+ *
+ * @see WP_Customize_Widgets::end_dynamic_sidebar()
+ *
+ * @param string $sidebar_id Sidebar ID.
+ */
+function render_sidebar_end_tag( $sidebar_id ) {
+	printf( '</div><!-- / .dynamic-sidebar.%s -->', sanitize_title( $sidebar_id ) );
+}
+add_action( 'dynamic_sidebar_after', __NAMESPACE__ . '\render_sidebar_end_tag', 15 );

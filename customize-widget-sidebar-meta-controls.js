@@ -36,22 +36,26 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 	 * @returns {boolean} Whether the section was extended (whether it was for a sidebar).
 	 */
 	component.extendSection = function extendSection( section ) {
-		var controlsContainer, titleSettingId;
+		var controlsContainer;
 
 		if ( ! section.extended( wp.customize.Widgets.SidebarSection ) ) {
 			return false;
 		}
 
 		// Embed the sidebar controls once the necessary settings exist.
-		titleSettingId = 'sidebar_meta[' + section.params.sidebarId + '][title]';
-		component.api( titleSettingId, function( titleSetting ) {
-			var titleElement;
+		component.api( 'sidebar_meta[' + section.params.sidebarId + '][title]', 'sidebar_meta[' + section.params.sidebarId + '][background_color]', function( titleSetting, backgroundColorSetting ) {
+			var titleElement, backgroundColorElement;
 			controlsContainer = $( $.trim( component.controlsTemplate() ) );
 
 			// Sync title input with the title setting.
 			titleElement = new component.api.Element( controlsContainer.find( 'input.title' ) );
 			titleElement.set( titleSetting.get() );
 			titleElement.sync( titleSetting );
+
+			// Sync background-color input with the title setting.
+			backgroundColorElement = new component.api.Element( controlsContainer.find( 'input.background-color' ) );
+			backgroundColorElement.set( backgroundColorSetting.get() );
+			backgroundColorElement.sync( backgroundColorSetting );
 
 			// Add controls container to the DOM.
 			section.contentContainer.find( '.customize-section-title' ).after( controlsContainer );
