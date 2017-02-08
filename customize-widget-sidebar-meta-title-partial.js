@@ -1,5 +1,4 @@
-/* exported CustomizeWidgetSidebarMetaPreview */
-/* eslint max-nested-callbacks: [ "error", 4 ] */
+/* eslint max-nested-callbacks: [ "error", 4 ], consistent-this: [ "error", "partial" ] */
 
 wp.customize.selectiveRefresh.partialConstructor.sidebar_meta_title = (function( api ) {
 	'use strict';
@@ -7,23 +6,22 @@ wp.customize.selectiveRefresh.partialConstructor.sidebar_meta_title = (function(
 	return api.selectiveRefresh.Partial.extend( {
 
 		/**
-		 * Partial ready.
+		 * Refresh.
 		 *
-		 * @returns {void}
+		 * @returns {jQuery.promise}
 		 */
-		ready: function() {
-			var partial = this; // eslint-disable-line consistent-this
-			api.selectiveRefresh.Partial.prototype.ready.call( partial );
+		refresh: function() {
+			var partial = this, titleSetting;
 
-			// Do low-fidelity preview while waiting for selective refresh to return.
-			api( partial.params.primarySetting, function( titleSetting ) {
-				titleSetting.bind( function( newTitle ) {
-					_.each( partial.placements(), function( placement ) {
-						placement.container.toggle( '' !== newTitle );
-						placement.container.text( newTitle );
-					} );
-				} );
+			// Do instant low-fidelity preview before selective refresh responds with high-fidelity PHP-rendering.
+			titleSetting = api( partial.params.primarySetting );
+			_.each( partial.placements(), function( placement ) {
+				placement.container.toggle( '' !== titleSetting.get() );
+				placement.container.text( titleSetting.get() );
 			} );
+
+			// Request high-fidelity PHP-rendering from the server.
+			return api.selectiveRefresh.Partial.prototype.refresh.call( partial );
 		}
 	} );
 })( wp.customize );
