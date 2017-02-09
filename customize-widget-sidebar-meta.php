@@ -54,14 +54,13 @@ function customize_register( \WP_Customize_Manager $wp_customize ) {
 add_action( 'customize_register', __NAMESPACE__ . '\customize_register' );
 
 /**
- * Upgrade core sidebars.
+ * Get the extra configs for sidebars for the given core theme.
  *
- * @global array $wp_registered_sidebars
+ * @param string $theme Theme.
+ * @return array|null List of the sidebars
  */
-function upgrade_core_theme_sidebars_for_background_coloring() {
-	global $wp_registered_sidebars;
-
-	$core_theme_sidebar_selectors = array(
+function get_core_theme_sidebar_configs( $theme ) {
+	$themes_sidebars = array(
 		'twentysixteen' => array(
 			'sidebar-1' => array(
 				'container_selector' => '#secondary',
@@ -146,15 +145,36 @@ function upgrade_core_theme_sidebars_for_background_coloring() {
 			),
 		),
 	);
-
-	$theme_sidebars = array();
-	if ( isset( $core_theme_sidebar_selectors[ get_template() ] ) ) {
-		$theme_sidebars = $core_theme_sidebar_selectors[ get_template() ];
-	} elseif ( isset( $core_theme_sidebar_selectors[ get_stylesheet() ] ) ) {
-		$theme_sidebars = $core_theme_sidebar_selectors[ get_stylesheet() ];
+	if ( isset( $themes_sidebars[ $theme ] ) ) {
+		return $themes_sidebars[ $theme ];
 	}
+	return null;
+}
 
-	foreach ( $theme_sidebars as $sidebar_id => $sidebar_config ) {
+/**
+ * Determine whether a core theme is active.
+ *
+ * This is used to determine whether extra padding should be added to the core theme's sidebars.
+ * Normally a theme that supports sidebar background colors should add this padding on their own.
+ *
+ * @return bool Whether a core theme is active.
+ */
+function is_core_theme_active() {
+	return null !== get_core_theme_sidebar_configs( get_template() );
+}
+
+/**
+ * Upgrade core sidebars.
+ *
+ * @global array $wp_registered_sidebars
+ */
+function upgrade_core_theme_sidebars_for_background_coloring() {
+	global $wp_registered_sidebars;
+	$sidebar_configs = get_core_theme_sidebar_configs( get_template() );
+	if ( empty( $sidebar_configs ) ) {
+		return;
+	}
+	foreach ( $sidebar_configs as $sidebar_id => $sidebar_config ) {
 		if ( isset( $wp_registered_sidebars[ $sidebar_id ] ) ) {
 			$wp_registered_sidebars[ $sidebar_id ] = array_merge(
 				$wp_registered_sidebars[ $sidebar_id ],
@@ -189,7 +209,7 @@ function register_sidebar_meta_settings() {
 		if ( did_action( 'customize_preview_init' ) ) {
 			$background_color_setting->preview();
 		}
-	} // End foreach().
+	}
 }
 
 /**
@@ -232,6 +252,7 @@ function print_sidebar_styles() {
 
 	$sidebar_meta = get_theme_mod( 'sidebar_meta' );
 
+	$needs_padding = is_core_theme_active();
 	foreach ( $wp_registered_sidebars as $sidebar_id => $sidebar ) {
 		if ( empty( $sidebar['container_selector'] ) ) {
 			continue;
@@ -245,9 +266,13 @@ function print_sidebar_styles() {
 			);
 		}
 		printf( '<style class="widget-sidebar-background-color" data-sidebar-id="%s">%s</style>', esc_attr( $sidebar_id ), $style );
+
+		if ( $needs_padding ) {
+			printf( '<style>%s { padding: 5px; }</style>', $sidebar['container_selector'] );
+		}
 	}
 }
-add_action( 'wp_head', __NAMESPACE__ . '\print_sidebar_styles' );
+add_action( 'wp_head', __NAMESPACE__ . '\print_sidebar_styles', 100 );
 
 /**
  * Enqueue frontend preview script.

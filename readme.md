@@ -14,9 +14,9 @@ Demonstration for how to add custom meta fields to a widget sidebar in the custo
 
 ## Description ##
 
-This plugin demonstrates how to add custom fields to widget sidebar sections in the WordPress customizer. As a demonistration it adds a sidebar title field that displays a heading above the sidebar which is updated with selective refresh and low-fidelity instant JS previewing.
+This plugin demonstrates how to add custom fields to widget sidebar sections in the WordPress customizer. As a demonstration it adds a sidebar background color field.
 
-[![Play video on YouTube](https://i1.ytimg.com/vi/ybLE4qW78Zw/hqdefault.jpg)](https://www.youtube.com/watch?v=ybLE4qW78Zw)
+[![Play video on YouTube](https://i1.ytimg.com/vi/aN6Swhfch-8/hqdefault.jpg)](https://www.youtube.com/watch?v=aN6Swhfch-8)
 
 ## Changelog ##
 
