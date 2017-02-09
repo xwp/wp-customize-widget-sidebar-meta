@@ -11,7 +11,9 @@ Demonstration for how to add custom meta fields to a widget sidebar in the custo
 
 == Description ==
 
-This plugin demonstrates how to add custom fields to widget sidebar sections in the WordPress customizer. As a demonstration it adds a sidebar background color field.
+This plugin demonstrates how to add custom fields to widget sidebar sections in the WordPress customizer. For background, see the full writeup: [Adding Meta Fields to a Widget Sidebar Section in the Customizer](https://make.xwp.co/2017/02/08/adding-meta-fields-to-a-widget-sidebar-section-in-the-customizer/).
+
+As a demonstration this plugin adds a sidebar background color field. See demo video:
 
 [youtube https://www.youtube.com/watch?v=aN6Swhfch-8]
 
