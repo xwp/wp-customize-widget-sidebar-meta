@@ -9,7 +9,7 @@
  * Domain Path: /languages
  * Version:     0.1.0-beta
  *
- * @package Customize_Featured_Content_Demo
+ * @package Customize_Widget_Sidebar_Meta_Controls
  */
 
 /*
@@ -54,6 +54,118 @@ function customize_register( \WP_Customize_Manager $wp_customize ) {
 add_action( 'customize_register', __NAMESPACE__ . '\customize_register' );
 
 /**
+ * Upgrade core sidebars.
+ *
+ * @global array $wp_registered_sidebars
+ */
+function upgrade_core_theme_sidebars_for_background_coloring() {
+	global $wp_registered_sidebars;
+
+	$core_theme_sidebar_selectors = array(
+		'twentysixteen' => array(
+			'sidebar-1' => array(
+				'container_selector' => '#secondary',
+			),
+			'sidebar-2' => array(
+				'container_selector' => '#content-bottom-widgets .widget-area:first-child',
+			),
+			'sidebar-3' => array(
+				'container_selector' => '#content-bottom-widgets .widget-area:last-child',
+			),
+		),
+		'twentyfifteen' => array(
+			'sidebar-1' => array(
+				'container_selector' => '#widget-area',
+			),
+		),
+		'twentyfourteen' => array(
+			'sidebar-1' => array(
+				'container_selector' => '#primary-sidebar',
+			),
+			'sidebar-2' => array(
+				'container_selector' => '#content-sidebar',
+			),
+			'sidebar-3' => array(
+				'container_selector' => '#footer-sidebar',
+			),
+		),
+		'twentythirteen' => array(
+			'sidebar-1' => array(
+				'container_selector' => '#secondary',
+			),
+			'sidebar-2' => array(
+				'container_selector' => '#tertiary',
+			),
+		),
+		'twentytwelve' => array(
+			'sidebar-1' => array(
+				'container_selector' => '#secondary.widget-area',
+			),
+			'sidebar-2' => array(
+				'container_selector' => '#secondary .front-widgets.first',
+			),
+			'sidebar-3' => array(
+				'container_selector' => '#secondary .front-widgets.second',
+			),
+		),
+		'twentyeleven' => array(
+			'sidebar-1' => array(
+				'container_selector' => '#secondary.widget-area',
+			),
+			'sidebar-2' => array(
+				'container_selector' => '.showcase .widget-area',
+			),
+			'sidebar-3' => array(
+				'container_selector' => '#first.widget-area',
+			),
+			'sidebar-4' => array(
+				'container_selector' => '#second.widget-area',
+			),
+			'sidebar-5' => array(
+				'container_selector' => '#third.widget-area',
+			),
+		),
+		'twentyten' => array(
+			'primary-widget-area' => array(
+				'container_selector' => '#primary.widget-area',
+			),
+			'secondary-widget-area' => array(
+				'container_selector' => '#secondary.widget-area',
+			),
+			'first-footer-widget-area' => array(
+				'container_selector' => '#footer-widget-area .widget-area.first',
+			),
+			'second-footer-widget-area' => array(
+				'container_selector' => '#footer-widget-area .widget-area.second',
+			),
+			'third-footer-widget-area' => array(
+				'container_selector' => '#footer-widget-area .widget-area.third',
+			),
+			'fourth-footer-widget-area' => array(
+				'container_selector' => '#footer-widget-area .widget-area.fourth',
+			),
+		),
+	);
+
+	$theme_sidebars = array();
+	if ( isset( $core_theme_sidebar_selectors[ get_template() ] ) ) {
+		$theme_sidebars = $core_theme_sidebar_selectors[ get_template() ];
+	} elseif ( isset( $core_theme_sidebar_selectors[ get_stylesheet() ] ) ) {
+		$theme_sidebars = $core_theme_sidebar_selectors[ get_stylesheet() ];
+	}
+
+	foreach ( $theme_sidebars as $sidebar_id => $sidebar_config ) {
+		if ( isset( $wp_registered_sidebars[ $sidebar_id ] ) ) {
+			$wp_registered_sidebars[ $sidebar_id ] = array_merge(
+				$wp_registered_sidebars[ $sidebar_id ],
+				$sidebar_config
+			);
+		}
+	}
+}
+add_action( 'widgets_init', __NAMESPACE__ . '\upgrade_core_theme_sidebars_for_background_coloring', 100 );
+
+/**
  * Register meta settings for widget sidebars.
  *
  * @global \WP_Customize_Manager $wp_customize
@@ -88,12 +200,6 @@ function register_sidebar_meta_settings() {
 			'sanitize_callback' => 'sanitize_hex_color',
 			'transport' => 'postMessage',
 			'default' => '',
-		) );
-		$wp_customize->selective_refresh->add_partial( $background_color_setting->id, array(
-			'type' => 'sidebar_meta_background_color',
-			'settings' => array( $background_color_setting->id ),
-			'selector' => sprintf( '.dynamic-sidebar.%s', sanitize_title( $section->sidebar_id ) ),
-			// Note that this partial has no render_callback because it is purely for JS previews.
 		) );
 
 		// Handle previewing of late-created settings.
@@ -154,6 +260,33 @@ function customize_controls_print_footer_scripts() {
 add_action( 'customize_controls_print_footer_scripts', __NAMESPACE__ . '\customize_controls_print_footer_scripts' );
 
 /**
+ * Print sidebar styles.
+ *
+ * @global array $wp_registered_sidebars
+ */
+function print_sidebar_styles() {
+	global $wp_registered_sidebars;
+
+	$sidebar_meta = get_theme_mod( 'sidebar_meta' );
+
+	foreach ( $wp_registered_sidebars as $sidebar_id => $sidebar ) {
+		if ( empty( $sidebar['container_selector'] ) ) {
+			continue;
+		}
+		$style = '';
+		if ( ! empty( $sidebar_meta[ $sidebar_id ]['background_color'] ) ) {
+			$style .= sprintf(
+				'%s { background-color: %s; }',
+				$sidebar['container_selector'],
+				$sidebar_meta[ $sidebar_id ]['background_color']
+			);
+		}
+		printf( '<style class="widget-sidebar-background-color" data-sidebar-id="%s">%s</style>', esc_attr( $sidebar_id ), $style );
+	}
+}
+add_action( 'wp_head', __NAMESPACE__ . '\print_sidebar_styles' );
+
+/**
  * Enqueue frontend preview script.
  *
  * @global \WP_Customize_Manager $wp_customize
@@ -182,32 +315,13 @@ function enqueue_preview_scripts() {
 	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-background-color-partial.js';
 	$deps = array( 'customize-preview', 'customize-selective-refresh' );
 	wp_enqueue_script( $handle, $src, $deps );
+
+	$handle = 'customize-widget-sidebar-meta-preview';
+	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-preview.js';
+	$deps = array( 'customize-preview', 'customize-selective-refresh' );
+	wp_enqueue_script( $handle, $src, $deps );
+	wp_add_inline_script( $handle, 'CustomizeWidgetSidebarMetaPreview.init( wp.customize );' );
 }
-
-/**
- * Render the sidebar start element if it is needed.
- *
- * Themes and plugins can prevent an additional container element by defining a
- * `container_class` property when calling `register_sidebar()`. Note the priority
- * is 5 so that it will output the start element before the title and before the "milestone" comment.
- *
- * @see WP_Customize_Widgets::start_dynamic_sidebar()
- *
- * @param string $sidebar_id Sidebar ID.
- */
-function render_sidebar_start_tag( $sidebar_id ) {
-
-	$style = 'padding: 5px;'; // For the sake of the background color.
-
-	$sidebar_meta = get_theme_mod( 'sidebar_meta' );
-	if ( ! empty( $sidebar_meta[ $sidebar_id ]['background_color'] ) ) {
-		$style .= sprintf( 'background-color: %s;', $sidebar_meta[ $sidebar_id ]['background_color'] );
-	}
-
-	printf( '<div class="dynamic-sidebar %s" style="%s">', sanitize_title( $sidebar_id ), $style );
-
-}
-add_action( 'dynamic_sidebar_before', __NAMESPACE__ . '\render_sidebar_start_tag', 5 );
 
 /**
  * Render the sidebar title.
@@ -241,17 +355,3 @@ function render_sidebar_title( $sidebar_id ) {
 	printf( '<h1 %s>%s</h1>', $container_attributes, esc_html( $rendered_title ) );
 }
 add_action( 'dynamic_sidebar_before', __NAMESPACE__ . '\render_sidebar_title', 9 );
-
-/**
- * Render the sidebar start element.
- *
- * Note the priority is 5 so that it will output the start element before the title and before the "milestone" comment.
- *
- * @see WP_Customize_Widgets::end_dynamic_sidebar()
- *
- * @param string $sidebar_id Sidebar ID.
- */
-function render_sidebar_end_tag( $sidebar_id ) {
-	printf( '</div><!-- / .dynamic-sidebar.%s -->', sanitize_title( $sidebar_id ) );
-}
-add_action( 'dynamic_sidebar_after', __NAMESPACE__ . '\render_sidebar_end_tag', 15 );

@@ -65,10 +65,15 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 	 * @returns {boolean} Whether the section was extended (whether it was for a sidebar).
 	 */
 	component.addControls = function addControls( section ) {
+		var registeredSidebar;
 
 		// @todo Let the priority define the ordering.
 		component.addTitleControl( section );
-		component.addBackgroundColorControl( section );
+
+		registeredSidebar = component.api.Widgets.registeredSidebars.get( section.params.sidebarId );
+		if ( registeredSidebar && registeredSidebar.get( 'container_selector' ) ) {
+			component.addBackgroundColorControl( section );
+		}
 	};
 
 	/**
