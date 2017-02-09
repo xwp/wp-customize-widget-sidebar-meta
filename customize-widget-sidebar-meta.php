@@ -177,23 +177,6 @@ function register_sidebar_meta_settings() {
 			continue;
 		}
 
-		$title_setting = $wp_customize->add_setting( sprintf( 'sidebar_meta[%s][title]', $section->sidebar_id ), array(
-			'type' => 'theme_mod',
-			'capability' => 'edit_theme_options', // i.e. manage_widgets.
-			'sanitize_callback' => 'sanitize_text_field',
-			'transport' => 'postMessage',
-			'default' => '',
-		) );
-		$wp_customize->selective_refresh->add_partial( $title_setting->id, array(
-			'container_inclusive' => true,
-			'type' => 'sidebar_meta_title',
-			'settings' => array( $title_setting->id ),
-			'selector' => sprintf( '[data-customize-partial-id="%s"]', $title_setting->id ),
-			'render_callback' => function() use ( $section ) {
-				render_sidebar_title( $section->sidebar_id );
-			},
-		) );
-
 		$background_color_setting = $wp_customize->add_setting( sprintf( 'sidebar_meta[%s][background_color]', $section->sidebar_id ), array(
 			'type' => 'theme_mod',
 			'capability' => 'edit_theme_options', // i.e. manage_widgets.
@@ -204,7 +187,6 @@ function register_sidebar_meta_settings() {
 
 		// Handle previewing of late-created settings.
 		if ( did_action( 'customize_preview_init' ) ) {
-			$title_setting->preview();
 			$background_color_setting->preview();
 		}
 	} // End foreach().
@@ -233,31 +215,12 @@ function customize_controls_enqueue_scripts() {
 	wp_enqueue_script( $handle, $src, $deps );
 	$data = array(
 		'l10n' => array(
-			'title_label' => __( 'Title:', 'customize-widget-sidebar-meta' ),
 			'background_color_label' => __( 'Background Color:', 'customize-widget-sidebar-meta' ),
 		),
 	);
 	wp_add_inline_script( $handle, sprintf( 'CustomizeWidgetSidebarMetaControls.init( wp.customize, %s );', wp_json_encode( $data ) ) );
 }
 add_action( 'customize_controls_enqueue_scripts', __NAMESPACE__ . '\customize_controls_enqueue_scripts' );
-
-/**
- * Print controls template.
- *
- * This should not be needed as of #30738.
- *
- * @link https://core.trac.wordpress.org/ticket/30738
- */
-function customize_controls_print_footer_scripts() {
-	?>
-	<script type="text/html" id="tmpl-customize-control-widget-sidebar-meta-title-content">
-		<# var elementIdBase = String( Math.random() ); #>
-		<label for="{{ elementIdBase + '[title]' }}" class="customize-control-title">{{ data.label }}</label>
-		<input class="title widefat" type="text" id="{{ elementIdBase + '[title]' }}" data-customize-setting-link="{{ data.settings['default'] }}">
-	</script>
-	<?php
-}
-add_action( 'customize_controls_print_footer_scripts', __NAMESPACE__ . '\customize_controls_print_footer_scripts' );
 
 /**
  * Print sidebar styles.
@@ -293,7 +256,6 @@ add_action( 'wp_head', __NAMESPACE__ . '\print_sidebar_styles' );
  */
 function customize_preview_init() {
 	global $wp_customize;
-
 	if ( empty( $wp_customize->widgets ) ) {
 		return;
 	}
@@ -306,11 +268,6 @@ add_action( 'customize_preview_init', __NAMESPACE__ . '\customize_preview_init' 
  * Enqueue preview scripts.
  */
 function enqueue_preview_scripts() {
-	$handle = 'customize-widget-sidebar-meta-title-partial';
-	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-title-partial.js';
-	$deps = array( 'customize-preview', 'customize-selective-refresh' );
-	wp_enqueue_script( $handle, $src, $deps );
-
 	$handle = 'customize-widget-sidebar-meta-background-color-partial';
 	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-background-color-partial.js';
 	$deps = array( 'customize-preview', 'customize-selective-refresh' );
@@ -322,36 +279,3 @@ function enqueue_preview_scripts() {
 	wp_enqueue_script( $handle, $src, $deps );
 	wp_add_inline_script( $handle, 'CustomizeWidgetSidebarMetaPreview.init( wp.customize );' );
 }
-
-/**
- * Render the sidebar title.
- *
- * Note the priority is 9 so that it will output the title before the "milestone" comment.
- *
- * @see WP_Customize_Widgets::start_dynamic_sidebar()
- *
- * @param string $sidebar_id Sidebar ID.
- */
-function render_sidebar_title( $sidebar_id ) {
-	$sidebar_meta = get_theme_mod( 'sidebar_meta' );
-	$is_empty_title = empty( $sidebar_meta[ $sidebar_id ]['title'] );
-
-	if ( $is_empty_title && ! is_customize_preview() ) {
-		return;
-	}
-
-	$title = $is_empty_title ? '' : $sidebar_meta[ $sidebar_id ]['title'];
-	$container_attributes = '';
-	if ( is_customize_preview() ) {
-		$container_attributes .= sprintf( ' data-customize-partial-id="%s"', "sidebar_meta[$sidebar_id][title]" );
-		if ( $is_empty_title ) {
-			$container_attributes .= ' hidden';
-		}
-	}
-
-	$rendered_title = wptexturize( $title );
-	$rendered_title = convert_smilies( $rendered_title );
-
-	printf( '<h1 %s>%s</h1>', $container_attributes, esc_html( $rendered_title ) );
-}
-add_action( 'dynamic_sidebar_before', __NAMESPACE__ . '\render_sidebar_title', 9 );

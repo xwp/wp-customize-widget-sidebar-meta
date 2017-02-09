@@ -26,7 +26,7 @@ var CustomizeWidgetSidebarMetaPreview = (function() {
 	};
 
 	/**
-	 * Add background color partials.
+	 * Add background color partial for each registered sidebar that has a container_selector defined.
 	 *
 	 * @returns {void}
 	 */

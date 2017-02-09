@@ -6,7 +6,6 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 	var component = {
 		data: {
 			l10n: {
-				color_label: '',
 				background_color_label: ''
 			}
 		}
@@ -49,12 +48,7 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 		section.metaControlsContainer = $( '<ul class="customize-widget-sidebar-meta-controls"></ul>' );
 		section.contentContainer.find( '.customize-section-title' ).after( section.metaControlsContainer );
 
-		component.api.apply( component.api, [
-			'sidebar_meta[' + section.params.sidebarId + '][title]',
-			'sidebar_meta[' + section.params.sidebarId + '][background_color]'
-		] ).done( function() {
-			component.addControls( section );
-		} );
+		component.addControls( section );
 		return true;
 	};
 
@@ -65,60 +59,22 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 	 * @returns {boolean} Whether the section was extended (whether it was for a sidebar).
 	 */
 	component.addControls = function addControls( section ) {
-		var registeredSidebar;
-
-		// @todo Let the priority define the ordering.
-		component.addTitleControl( section );
-
-		registeredSidebar = component.api.Widgets.registeredSidebars.get( section.params.sidebarId );
-		if ( registeredSidebar && registeredSidebar.get( 'container_selector' ) ) {
-			component.addBackgroundColorControl( section );
-		}
-	};
-
-	/**
-	 * Add title control.
-	 *
-	 * @param {wp.customize.Widgets.SidebarSection} section Section.
-	 * @returns {wp.customize.control} The added control.
-	 */
-	component.addTitleControl = function addTitleControl( section ) {
-		var control, customizeId, setting;
-
-		customizeId = 'sidebar_meta[' + section.params.sidebarId + '][title]';
-		setting = component.api( customizeId );
-		control = new component.api.Control( customizeId, {
-			params: {
-				section: null,
-				label: component.data.l10n.title_label,
-				active: true,
-				type: 'widget-sidebar-meta-title', // Needed for template. See \Customize_Widget_Sidebar_Meta_Controls\customize_controls_print_footer_scripts().
-				settings: {
-					'default': setting.id
-				},
-				content: '<li class="customize-control"></li>' // This should not be needed in WordPress 4.8.
-			}
-		} );
-		section.metaControlsContainer.append( control.container );
-
-		// These should not be needed in the future (as of #38077). They are needed currently because section is null.
-		control.renderContent();
-		control.deferred.embedded.resolve();
-
-		// The following will be unnecessary as of #37964 and #30738
-		control.titleElement = new component.api.Element( control.container.find( 'input' ) );
-		control.titleElement.set( setting.get() );
-		control.titleElement.sync( setting );
+		component.addBackgroundColorControl( section );
 	};
 
 	/**
 	 * Add color control.
 	 *
 	 * @param {wp.customize.Widgets.SidebarSection} section Section.
-	 * @returns {wp.customize.ColorControl} The added control.
+	 * @returns {wp.customize.ColorControl} The added control or null if the sidebar does not support background color.
 	 */
 	component.addBackgroundColorControl = function addColorControl ( section ) {
-		var control, customizeId;
+		var registeredSidebar, control, customizeId;
+
+		registeredSidebar = component.api.Widgets.registeredSidebars.get( section.params.sidebarId );
+		if ( ! registeredSidebar || ! registeredSidebar.get( 'container_selector' ) ) {
+			return null;
+		}
 
 		customizeId = 'sidebar_meta[' + section.params.sidebarId + '][background_color]';
 		control = new component.api.ColorControl( customizeId, {
