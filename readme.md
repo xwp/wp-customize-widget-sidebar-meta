@@ -18,6 +18,8 @@ This plugin demonstrates how to add custom fields to widget sidebar sections in 
 
 [![Play video on YouTube](https://i1.ytimg.com/vi/aN6Swhfch-8/hqdefault.jpg)](https://www.youtube.com/watch?v=aN6Swhfch-8)
 
+Notice that the purpose of this plugin is to demonstrate an approach for implementing certain functionality in the customizer. This plugin should not be expected to be maintained or directly supported. The concepts in this plugin can be incorporated into your own themes and plugins.
+
 The plugin requires a tiny bit of theme support, although the core themes are all supported by default. In order to add support, you have to register your sidebars with a `container_selector` property which points to the element that contains the `dynamic_sidebar()` call. In other words, given a `sidebar.php` that contains:
 
 ```php

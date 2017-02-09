@@ -7,7 +7,7 @@
  * Author URI:  https://make.xwp.co/
  * Text Domain: customize-widget-sidebar-meta
  * Domain Path: /languages
- * Version:     0.1.0-beta
+ * Version:     0.1.0
  *
  * @package Customize_Widget_Sidebar_Meta_Controls
  */
