@@ -101,7 +101,7 @@ function register_sidebar_meta_settings() {
 			$title_setting->preview();
 			$background_color_setting->preview();
 		}
-	}
+	} // End foreach().
 }
 
 /**
@@ -117,31 +117,37 @@ function customize_controls_enqueue_scripts() {
 	}
 
 	$handle = 'customize-widget-sidebar-meta-controls';
+	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-controls.css';
+	$deps = array( 'customize-controls' );
+	wp_enqueue_style( $handle, $src, $deps );
+
+	$handle = 'customize-widget-sidebar-meta-controls';
 	$src = plugin_dir_url( __FILE__ ) . 'customize-widget-sidebar-meta-controls.js';
 	$deps = array( 'customize-widgets' );
 	wp_enqueue_script( $handle, $src, $deps );
-	wp_add_inline_script( $handle, 'CustomizeWidgetSidebarMetaControls.init( wp.customize );' );
+	$data = array(
+		'l10n' => array(
+			'title_label' => __( 'Title:', 'customize-widget-sidebar-meta' ),
+			'background_color_label' => __( 'Background Color:', 'customize-widget-sidebar-meta' ),
+		),
+	);
+	wp_add_inline_script( $handle, sprintf( 'CustomizeWidgetSidebarMetaControls.init( wp.customize, %s );', wp_json_encode( $data ) ) );
 }
 add_action( 'customize_controls_enqueue_scripts', __NAMESPACE__ . '\customize_controls_enqueue_scripts' );
 
 /**
  * Print controls template.
+ *
+ * This should not be needed as of #30738.
+ *
+ * @link https://core.trac.wordpress.org/ticket/30738
  */
 function customize_controls_print_footer_scripts() {
 	?>
-	<script type="text/template" id="tmpl-customize-widget-sidebar-meta-controls">
+	<script type="text/html" id="tmpl-customize-control-widget-sidebar-meta-title-content">
 		<# var elementIdBase = String( Math.random() ); #>
-		<div class="customize-widget-sidebar-meta-controls">
-			<p class="title">
-				<label for="{{ elementIdBase + '[title]' }}"><?php esc_html_e( 'Title:', 'customize-widget-sidebar-meta' ); ?></label>
-				<input class="title widefat" type="text" id="{{ elementIdBase + '[title]' }}">
-			</p>
-
-			<p class="background-color">
-				<label for="{{ elementIdBase + '[background-color]' }}"><?php esc_html_e( 'Background Color:', 'customize-widget-sidebar-meta' ); ?></label>
-				<input class="background-color widefat" type="color" id="{{ elementIdBase + '[background-color]' }}">
-			</p>
-		</div>
+		<label for="{{ elementIdBase + '[title]' }}" class="customize-control-title">{{ data.label }}</label>
+		<input class="title widefat" type="text" id="{{ elementIdBase + '[title]' }}" data-customize-setting-link="{{ data.settings['default'] }}">
 	</script>
 	<?php
 }
