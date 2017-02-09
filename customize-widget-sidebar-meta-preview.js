@@ -31,7 +31,7 @@ var CustomizeWidgetSidebarMetaPreview = (function() {
 	 * @returns {void}
 	 */
 	component.addBackgroundColorPartials = function addBackgroundColorPartials() {
-		_.each( component.api.widgetsPreview.registeredSidebars, function ( sidebar ) {
+		_.each( component.api.widgetsPreview.registeredSidebars, function( sidebar ) {
 			var partial, settingId;
 			if ( ! sidebar.container_selector ) {
 				return;

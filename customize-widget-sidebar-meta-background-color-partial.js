@@ -12,8 +12,9 @@ wp.customize.selectiveRefresh.partialConstructor.sidebar_meta_background_color =
 		 *
 		 * @param {string} id - Partial ID.
 		 * @param {Object} options - Options.
+		 * @returns {void}
 		 */
-		initialize: function initialize( id, options ) {
+		initialize: function initialize( id, options ) { // eslint-disable-line complexity
 			var partial = this;
 			api.selectiveRefresh.Partial.prototype.initialize.call( partial, id, options );
 
@@ -34,7 +35,7 @@ wp.customize.selectiveRefresh.partialConstructor.sidebar_meta_background_color =
 		 * Override refresh behavior to apply changes with JS instead of doing
 		 * a selective refresh request for PHP rendering (since unnecessary).
 		 *
-		 * @returns {jQuery.promise}
+		 * @returns {jQuery.promise} Resolved promise.
 		 */
 		refresh: function() {
 			var partial = this, backgroundColorSetting;

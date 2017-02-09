@@ -66,9 +66,9 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 	 * Add color control.
 	 *
 	 * @param {wp.customize.Widgets.SidebarSection} section Section.
-	 * @returns {wp.customize.ColorControl} The added control or null if the sidebar does not support background color.
+	 * @returns {wp.customize.ColorControl|null} The added control or null if the sidebar does not support background color.
 	 */
-	component.addBackgroundColorControl = function addColorControl ( section ) {
+	component.addBackgroundColorControl = function addColorControl( section ) {
 		var registeredSidebar, control, customizeId;
 
 		registeredSidebar = component.api.Widgets.registeredSidebars.get( section.params.sidebarId );
@@ -95,6 +95,8 @@ var CustomizeWidgetSidebarMetaControls = (function( $ ) {
 		// These should not be needed in the future (as of #38077). They are needed currently because section is null.
 		control.renderContent();
 		control.deferred.embedded.resolve();
+
+		return control;
 	};
 
 	return component;
