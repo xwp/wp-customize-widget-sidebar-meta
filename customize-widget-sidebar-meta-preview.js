@@ -22,7 +22,9 @@ var CustomizeWidgetSidebarMetaPreview = (function() {
 	 * @returns {void}
 	 */
 	component.ready = function ready() {
-		component.addBackgroundColorPartials();
+		_.delay( function() { // Next-tick because registeredSidebars are also populated at preview-ready.
+			component.addBackgroundColorPartials();
+		} );
 	};
 
 	/**
