@@ -281,7 +281,7 @@ add_action( 'wp_head', __NAMESPACE__ . '\print_sidebar_styles', 100 );
  */
 function customize_preview_init() {
 	global $wp_customize;
-	if ( empty( $wp_customize->widgets ) ) {
+	if ( empty( $wp_customize->widgets ) || ! current_user_can( 'edit_theme_options' ) ) {
 		return;
 	}
 
